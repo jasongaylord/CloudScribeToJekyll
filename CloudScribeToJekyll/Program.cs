@@ -33,7 +33,7 @@ namespace CloudScribeToJekyll
 
                 // Build post query
                 var post_sql_sb = new StringBuilder();
-                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.IsPublished, p.CategoriesCsv, p.Content, u.DisplayName, u.Email, c.BlogPageText ");
+                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.DraftPubDate, p.IsPublished, p.CategoriesCsv, p.Content, p.DraftContent, u.DisplayName, u.Email, c.BlogPageText ");
                 post_sql_sb.Append("FROM cs_Post p LEFT JOIN cs_User u ON p.Author = u.Email LEFT JOIN cs_ContentProject c ON p.BlogId = c.Id");
 
                 if (!string.IsNullOrEmpty(config.blogid))
@@ -54,12 +54,14 @@ namespace CloudScribeToJekyll
                                 title = post_reader[1].ToString(),
                                 slug = post_reader[2].ToString(),
                                 pubdate = post_reader[3].ToString(),
-                                isPublished = bool.Parse(post_reader[4].ToString()),
-                                categoriescsv = post_reader[5].ToString(),
-                                content = post_reader[6].ToString(),
-                                displayname = post_reader[7].ToString(),
-                                email = post_reader[8].ToString(),
-                                blogurl = post_reader[9].ToString()
+                                draftpubdate = post_reader[4].ToString(),
+                                isPublished = bool.Parse(post_reader[5].ToString()),
+                                categoriescsv = post_reader[6].ToString(),
+                                content = post_reader[7].ToString(),
+                                draftcontent = post_reader[8].ToString(),
+                                displayname = post_reader[9].ToString(),
+                                email = post_reader[10].ToString(),
+                                blogurl = post_reader[11].ToString()
                             });
                         }
                     }
@@ -111,7 +113,7 @@ namespace CloudScribeToJekyll
             foreach (var BlogPost in Posts)
             {
                 var subdir = BlogPost.isPublished ? "\\_posts\\" : "\\_drafts\\";
-                var pubDate = string.IsNullOrEmpty(BlogPost.pubdate) ? DateTime.Now : DateTime.Parse(BlogPost.pubdate);
+                var pubDate = string.IsNullOrEmpty(BlogPost.pubdate) ? DateTime.Parse(BlogPost.draftpubdate) : DateTime.Parse(BlogPost.pubdate);
                 var permalink = "/" + BlogPost.slug;
                 if (!string.IsNullOrEmpty(BlogPost.blogurl))
                     permalink = "/" + BlogPost.blogurl + permalink;
@@ -142,24 +144,12 @@ namespace CloudScribeToJekyll
                     file.WriteLine("---");
                     file.WriteLine("");
 
+                    var content = BlogPost.isPublished ? BlogPost.content : BlogPost.draftcontent;
+                    content += "\n";
                     if (config.filetype.ToLower() == "md")
-                    {
-                        try
-                        {
-                            file.Write(markdownConverter.Convert(BlogPost.content));
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("");
-                            Console.WriteLine(ex.Message);
-                            Console.WriteLine(filename);
-                            Console.WriteLine(BlogPost.content);
-                            Console.WriteLine("");
-                        }
-                        file.Write(BlogPost.content);
-                    }
+                        file.Write(markdownConverter.Convert(content));
                     else
-                        file.Write(BlogPost.content);
+                        file.Write(content);
                 }
             }
         }
@@ -184,9 +174,11 @@ namespace CloudScribeToJekyll
         public string title { get; set; }
         public string slug { get; set; }
         public string pubdate { get; set; }
+        public string draftpubdate { get; set; }
         public bool isPublished { get; set; }
         public string categoriescsv { get; set; }
         public string content { get; set; }
+        public string draftcontent { get; set; }
         public string displayname { get; set; }
         public string email { get; set; }
         public string blogurl { get; set; }

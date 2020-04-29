@@ -33,8 +33,8 @@ namespace CloudScribeToJekyll
 
                 // Build post query
                 var post_sql_sb = new StringBuilder();
-                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.IsPublished, p.CategoriesCsv, p.Content, u.DisplayName, u.Email ");
-                post_sql_sb.Append("FROM cs_Post p LEFT JOIN cs_User u ON p.Author = u.Email");
+                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.IsPublished, p.CategoriesCsv, p.Content, u.DisplayName, u.Email, c.BlogPageText ");
+                post_sql_sb.Append("FROM cs_Post p LEFT JOIN cs_User u ON p.Author = u.Email LEFT JOIN cs_ContentProject c ON p.BlogId = c.Id");
 
                 if (!string.IsNullOrEmpty(config.blogid))
                     post_sql_sb.Append("WHERE p.BlogId = '" + config.blogid + "'");
@@ -54,11 +54,12 @@ namespace CloudScribeToJekyll
                                 title = post_reader[1].ToString(),
                                 slug = post_reader[2].ToString(),
                                 pubdate = post_reader[3].ToString(),
-                                isPublished = (post_reader[4].ToString() == "1"),
+                                isPublished = bool.Parse(post_reader[4].ToString()),
                                 categoriescsv = post_reader[5].ToString(),
                                 content = post_reader[6].ToString(),
                                 displayname = post_reader[7].ToString(),
-                                email = post_reader[8].ToString()
+                                email = post_reader[8].ToString(),
+                                blogurl = post_reader[9].ToString()
                             });
                         }
                     }
@@ -102,7 +103,65 @@ namespace CloudScribeToJekyll
             }
 
             // Now that SQL is done, we can start processing the files.
-            
+            var markdownConverter = new Html2Markdown.Converter();
+            var folderPath = config.jekyll_location;
+            Directory.CreateDirectory(folderPath + "\\_posts\\");
+            Directory.CreateDirectory(folderPath + "\\_drafts\\");
+
+            foreach (var BlogPost in Posts)
+            {
+                var subdir = BlogPost.isPublished ? "\\_posts\\" : "\\_drafts\\";
+                var pubDate = string.IsNullOrEmpty(BlogPost.pubdate) ? DateTime.Now : DateTime.Parse(BlogPost.pubdate);
+                var permalink = "/" + BlogPost.slug;
+                if (!string.IsNullOrEmpty(BlogPost.blogurl))
+                    permalink = "/" + BlogPost.blogurl + permalink;
+
+                var dateString = pubDate.ToString("yyyy-MM-dd");
+                var filename = BlogPost.isPublished ? string.Format("{0}-{1}", dateString, BlogPost.slug) : BlogPost.slug;
+
+                var filePath = folderPath + subdir + filename + "." + config.filetype;
+                using (var file = File.CreateText(filePath))
+                {
+                    file.WriteLine("---");
+                    file.WriteLine("title: \"" + BlogPost.title + "\"");
+                    file.WriteLine("author: ");
+                    file.WriteLine("  display_name: \"" + BlogPost.displayname + "\"");
+                    file.WriteLine("  email: \"" + BlogPost.email + "\"");
+                    file.WriteLine("cloudscribe_id: \"" + BlogPost.id + "\"");
+                    file.WriteLine("cloudscribe_path: \"" + permalink + "\"");
+                    file.WriteLine("permalink: " + permalink);
+                    file.WriteLine("date: " + dateString);
+                    file.WriteLine("categories: " + BlogPost.categoriescsv);
+                    file.WriteLine("tags: ");
+
+                    if (config.comments)
+                    {
+                        file.WriteLine("comments: ");
+
+                    }
+                    file.WriteLine("---");
+                    file.WriteLine("");
+
+                    if (config.filetype.ToLower() == "md")
+                    {
+                        try
+                        {
+                            file.Write(markdownConverter.Convert(BlogPost.content));
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("");
+                            Console.WriteLine(ex.Message);
+                            Console.WriteLine(filename);
+                            Console.WriteLine(BlogPost.content);
+                            Console.WriteLine("");
+                        }
+                        file.Write(BlogPost.content);
+                    }
+                    else
+                        file.Write(BlogPost.content);
+                }
+            }
         }
     }
 
@@ -130,6 +189,7 @@ namespace CloudScribeToJekyll
         public string content { get; set; }
         public string displayname { get; set; }
         public string email { get; set; }
+        public string blogurl { get; set; }
         public List<Comment> comments { get; set; }
     }
 

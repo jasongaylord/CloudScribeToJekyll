@@ -6,5 +6,6 @@
     "filetype": "md",
     "blogid": "",
     "comments": false,
-    "categories": true
+    "categories": true,
+    "jekyll_location": "C:\Jekyll\"
 }

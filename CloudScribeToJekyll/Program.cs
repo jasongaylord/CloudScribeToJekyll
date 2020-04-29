@@ -115,7 +115,8 @@ namespace CloudScribeToJekyll
         public string filetype { get; set; }
         public string blogid { get; set; }
         public bool comments { get; set; }
-        public bool categories { get; set; } 
+        public bool categories { get; set; }
+        public string jekyll_location { get; set; }
     }
 
     public class Post

@@ -1,0 +1,11 @@
+{
+    "server": "",
+    "port": "1433",
+    "username": "",
+    "password": "",
+    "database": "",
+    "filetype": "md",
+    "blogid": "",
+    "comments": false,
+    "categories": true
+}

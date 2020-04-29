@@ -11,6 +11,9 @@ namespace CloudScribeToJekyll
     {
         static void Main(string[] args)
         {
+            // Create Posts object
+            var Posts = new List<Post>();
+
             // Read configuration file
             var config = JsonConvert.DeserializeObject<CloudScribeSettings>(File.ReadAllText("cloudscribe.json"));
 
@@ -30,7 +33,7 @@ namespace CloudScribeToJekyll
 
                 // Build post query
                 var post_sql_sb = new StringBuilder();
-                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.IsPublished, p.CategoriesCsv, p.Content, u.DisplayName, u.Email");
+                post_sql_sb.Append("SELECT p.Id, p.Title, p.Slug, p.PubDate, p.IsPublished, p.CategoriesCsv, p.Content, u.DisplayName, u.Email ");
                 post_sql_sb.Append("FROM cs_Post p LEFT JOIN cs_User u ON p.Author = u.Email");
 
                 if (!string.IsNullOrEmpty(config.blogid))
@@ -45,13 +48,61 @@ namespace CloudScribeToJekyll
                     {
                         while (post_reader.Read())
                         {
-
+                            Posts.Add(new Post()
+                            {
+                                id = post_reader[0].ToString(),
+                                title = post_reader[1].ToString(),
+                                slug = post_reader[2].ToString(),
+                                pubdate = post_reader[3].ToString(),
+                                isPublished = (post_reader[4].ToString() == "1"),
+                                categoriescsv = post_reader[5].ToString(),
+                                content = post_reader[6].ToString(),
+                                displayname = post_reader[7].ToString(),
+                                email = post_reader[8].ToString()
+                            });
                         }
                     }
                 }
 
-                // Next
+                // If we need to get comments, let's grab the comments and update accordingly
+                if (config.comments)
+                {
+                    // Build comment query
+                    var post_comment_sb = new StringBuilder();
+                    post_comment_sb.Append("SELECT Id, Content, PubDate, Author, Email, Website FROM cs_PostComment ");
+                    post_comment_sb.Append("WHERE IsApproved = 1 AND PostEntityId = '{0}'");
+
+                    var post_comment = post_comment_sb.ToString();
+
+                    foreach (var post_for_comment in Posts)
+                    {
+                        post_for_comment.comments = new List<Comment>();
+
+                        // Read each post
+                        using (var comment_command = new SqlCommand(post_comment.Replace("{0}", post_for_comment.id), connection))
+                        {
+                            using (var comment_reader = comment_command.ExecuteReader())
+                            {
+                                while (comment_reader.Read())
+                                {
+                                    post_for_comment.comments.Add(new Comment()
+                                    {
+                                        id = comment_reader[0].ToString(),
+                                        content = comment_reader[1].ToString(),
+                                        pubdate = comment_reader[2].ToString(),
+                                        author = comment_reader[3].ToString(),
+                                        email = comment_reader[4].ToString(),
+                                        website = comment_reader[5].ToString()
+                                    });
+                                }
+                            }
+                        }
+                    } // end foreach
+                } //end if comments
             }
+
+            // Now that SQL is done, we can start processing the files.
+            
         }
     }
 

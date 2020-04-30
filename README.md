@@ -45,13 +45,21 @@ The cloudscribe.json file has the following structure:
 ```
 
 *server* - This is the server for your database. If hosting on Azure, the value is {resource_name}.database.windows.net.
+
 *username* - This is the username you use to connect to the database.
+
 *password* - This is the password you use to connect to the database.
+
 *database* - This is the database name where CloudScribe is hosted.
+
 *filetype* - The valid values are either 'md' for Markdown or 'html' for HTML. This will be the end result for your posts.
+
 *blogid* - Optional. This is to specify a GUID for the specific blog you wish to migrate. Use this for multi-tenant setups.
+
 *comments* - Optional. The default value is false. This means that comments won't be migrated. If you use Disquis, you won't need to migrate comments.
+
 *categories* - Optional. The default value is true. This means that categories will be placed in the header of the post.
+
 *jekyll_location* - Optional. The folder that you'd like the '_posts' and '_drafts' to be placed.
 
 ## Running the application

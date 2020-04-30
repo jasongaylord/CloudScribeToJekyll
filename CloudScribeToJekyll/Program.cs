@@ -126,14 +126,13 @@ namespace CloudScribeToJekyll
                 {
                     file.WriteLine("---");
                     file.WriteLine("title: \"" + BlogPost.title + "\"");
-                    file.WriteLine("author: ");
-                    file.WriteLine("  display_name: \"" + BlogPost.displayname + "\"");
-                    file.WriteLine("  email: \"" + BlogPost.email + "\"");
+                    file.WriteLine("author: " + BlogPost.displayname);
+                    file.WriteLine("email: " + BlogPost.email);
                     file.WriteLine("cloudscribe_id: \"" + BlogPost.id + "\"");
                     file.WriteLine("cloudscribe_path: \"" + permalink + "\"");
                     file.WriteLine("permalink: " + permalink);
                     file.WriteLine("date: " + dateString);
-                    file.WriteLine("categories: " + BlogPost.categoriescsv);
+                    file.WriteLine("categories: [" + BlogPost.categoriescsv.Replace(",", ", ") + "]");
                     file.WriteLine("tags: ");
 
                     if (config.comments)
